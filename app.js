@@ -6,18 +6,36 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post('/send-notification', async (req, res) => {
-    const { token, title, body } = req.body;
+    const { token, title, body, data = {} } = req.body;
 
     if (!token || !title || !body) {
         return res.status(400).send('Token, title, and body are required');
     }
 
     const message = {
+        token: token,
         notification: {
             title: title,
             body: body,
-        }, data: { name: "CODE_CATY" },
-        token: token,
+        },
+        data: data,
+        android: {
+            priority: 'high',
+            notification: {
+                channelId: 'default',
+                sound: 'default',
+            },
+        },
+        apns: {
+            headers: {
+                'apns-priority': '10',
+            },
+            payload: {
+                aps: {
+                    sound: 'default',
+                },
+            },
+        },
     };
 
     try {
@@ -30,6 +48,7 @@ app.post('/send-notification', async (req, res) => {
     }
 });
 
-app.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
+const port = 3000;
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
 });

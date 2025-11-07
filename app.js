@@ -1,7 +1,7 @@
 const admin = require("./firebase");
 const express = require('express');
 const bodyParser = require('body-parser');
-
+const { generateNameFromUsername,generateAccountNumber } = require('./helpers')
 const app = express();
 app.use(bodyParser.json());
 
@@ -66,20 +66,20 @@ app.post('/get-token', async (req, res) => {
     const { deviceId } = req.body;
 
     if (!deviceId) {
-        return res.status(400).send('deviceId is required');
+        return res.status(400).json({ error: 'deviceId is required' });
     }
 
     try {
         const doc = await tokensCollection.doc(deviceId.toString()).get();
         
         if (!doc.exists) {
-            return res.status(404).send('Token not found for this device');
+            return res.status(404).json({error: 'Token not found for this device'});
         }
 
         res.status(200).json(doc.data());
     } catch (error) {
         console.error('Error fetching token:', error);
-        res.status(500).send('Error fetching token');
+        res.status(500).json({error: 'Error fetching token'});
     }
 });
 
@@ -114,7 +114,7 @@ app.get('/get-devices', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching devices:', error);
-        res.status(500).send('Error fetching devices');
+        res.status(500).json({error: 'Error fetching devices'});
     }
 });
 
@@ -123,15 +123,15 @@ app.delete('/delete-token', async (req, res) => {
     const { deviceId } = req.body;
 
     if (!deviceId) {
-        return res.status(400).send('deviceId is required');
+        return res.status(400).json({error: 'deviceId is required'});
     }
     
     try {
         await tokensCollection.doc(deviceId.toString()).delete();
-        res.status(200).send('Token deleted successfully');
+        res.status(200).json({error: 'Token deleted successfully'});
     } catch (error) {
         console.error('Error deleting token:', error);
-        res.status(500).send('Error deleting token');
+        res.status(500).json({error: 'Error deleting token'});
     }
 });
 
@@ -140,14 +140,14 @@ app.post('/send-notification', async (req, res) => {
     const { deviceId, title, body, data = {} } = req.body;
 
     if (!deviceId || !title || !body) {
-        return res.status(400).send('deviceId, title, and body are required');
+        return res.status(400).json({error: 'deviceId, title, and body are required'});
     }
 
     try {
         const doc = await tokensCollection.doc(deviceId.toString()).get();
         
         if (!doc.exists) {
-            return res.status(404).send('Token not found for this device');
+            return res.status(404).json({error: 'Token not found for this device'});
         }
 
         const { token } = doc.data();
@@ -178,12 +178,39 @@ app.post('/send-notification', async (req, res) => {
             },
         };
 
-        const response = await admin.messaging().send(message);
+        const response = await admin.messaging().json({message});
         console.log('Successfully sent message:', response);
-        res.status(200).send('Notification sent successfully');
+        res.status(200).json({error: 'Notification sent successfully'});
     } catch (error) {
         console.error('Error sending message:', error);
-        res.status(500).send('Error sending notification');
+        res.status(500).json({error: 'Error sending notification'});
+    }
+});
+
+// Generate Account endpoint
+app.post('/generate-account', async (req, res) => {
+    const { username } = req.body;
+
+    if (!username) {
+        return res.status(400).json({ 
+            error: 'username is required' 
+        });
+    }
+
+    try {
+        const accountName = generateNameFromUsername(username);
+        const accountNumber = generateAccountNumber(username);
+
+        res.status(200).json({
+            accountName: accountName,
+            accountNumber: accountNumber,
+        });
+
+    } catch (error) {
+        console.error('Error generating account:', error);
+        res.status(500).json({ 
+            error: 'Error generating account details' 
+        });
     }
 });
 

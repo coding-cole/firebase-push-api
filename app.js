@@ -44,7 +44,7 @@ app.post('/register-token', async (req, res) => {
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            console.log(`New token registered for device ${deviceId}`);
+            console.log(`New token registered for device ${accountNumber}`);
             res.status(201).json({
                 message: 'Token registered successfully',
                 accountNumber: accountNumber,
@@ -83,14 +83,14 @@ app.post('/get-token', async (req, res) => {
 
 // Delete token
 app.delete('/delete-token', async (req, res) => {
-    const { deviceId } = req.body;
+    const { accountNumber } = req.body;
 
-    if (!deviceId) {
-        return res.status(400).json({ error: 'deviceId is required' });
+    if (!accountNumber) {
+        return res.status(400).json({ error: 'accountNumber is required' });
     }
 
     try {
-        await tokensCollection.doc(deviceId.toString()).delete();
+        await tokensCollection.doc(accountNumber.toString()).delete();
         res.status(200).json({ error: 'Token deleted successfully' });
     } catch (error) {
         console.error('Error deleting token:', error);
